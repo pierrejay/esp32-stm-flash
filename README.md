@@ -38,7 +38,7 @@ STM32 nRESET <-> GPIO ESP32
  STM32 BOOT0 <-> GPIO ESP32
     STM32 TX <-> RX ESP32
     STM32 RX <-> TX ESP32
-```.
+```
 
 ### Pin Optimization Trick
 
