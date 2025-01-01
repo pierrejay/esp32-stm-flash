@@ -2,11 +2,11 @@
 #include <STM32Flasher.h>
 
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
 
-    Serial.begin(9600); // USB for debugging
-    
+    Serial.begin(9600); // Serial (USB CDC on ESP32S3) for debugging
+
     // Flasher configuration
     stm32flash::FlashConfig config = {
         .reset_pin = GPIO_NUM_5,
