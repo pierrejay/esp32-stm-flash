@@ -9,12 +9,11 @@ void setup() {
     
     // Configuration du flasher
     stm32flash::FlashConfig config = {
+        .reset_pin = GPIO_NUM_5,
+        .boot0_pin = GPIO_NUM_43,
         .uart_tx = GPIO_NUM_43,
         .uart_rx = GPIO_NUM_6,
-        .reset_pin = GPIO_NUM_5,
-        .boot0_pin = GPIO_NUM_4,
         .uart_num = (uart_port_t)UART_NUM_1,
-        .debug_serial = &Serial
     };
 
     // Création du flasher avec la config
@@ -29,7 +28,7 @@ void setup() {
     Serial.println("Starting STM32 flash...");
 
     // Flash du STM32
-    stm32flash::FlashStatus status = flasher.flash("blink1000.bin");
+    stm32flash::FlashStatus status = flasher.flash("blink50.bin");
     if (status != stm32flash::SUCCESS) {
         Serial.printf("STM32 flash aborted with error: %s\n", stm32flash::toString(status));
     } else {

@@ -11,19 +11,15 @@ namespace stm32flash {
  * @brief Configuration structure for the flasher
  */
 struct FlashConfig {
-    // UART pins
-    gpio_num_t uart_tx = GPIO_NUM_NC;
-    gpio_num_t uart_rx = GPIO_NUM_NC;
     
     // Control pins
     gpio_num_t reset_pin = GPIO_NUM_NC;
     gpio_num_t boot0_pin = GPIO_NUM_NC;
 
-    // UART port
+    // UART configuration (ESP32 side)
+    gpio_num_t uart_tx = GPIO_NUM_NC; // ESP32 TX <-> STM32 RX
+    gpio_num_t uart_rx = GPIO_NUM_NC; // ESP32 RX <-> STM32 TX
     uart_port_t uart_num = UART_NUM_MAX;
-    
-    // Optional debug output
-    Stream* debug_serial;
 
     bool isValid() const {
         return (uart_tx != GPIO_NUM_NC &&
@@ -118,17 +114,15 @@ public:
     explicit STM32Flasher(const FlashConfig& config);
 
     /**
-     * @brief Destructor
-     */
-    ~STM32Flasher();
-
-    /**
      * @brief Flash STM32 with binary file
      * @param filename Name of the binary file to flash
      * @return FlashStatus indicating success or specific error
      */
     FlashStatus flash(const char* filename);
 
+    // Disable copy constructor and assignment operator
+    STM32Flasher(const STM32Flasher&) = delete;
+    STM32Flasher& operator=(const STM32Flasher&) = delete;
 
 private:
     FlashConfig config_;         // Configuration

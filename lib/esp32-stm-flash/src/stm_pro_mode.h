@@ -59,20 +59,11 @@
 //Initialize UART functionalities
 stm32flash::FlashStatus initFlashUART(uart_port_t uart_num, gpio_num_t tx, gpio_num_t rx);
 
-//Initialize GPIO functionalities
-stm32flash::FlashStatus initGPIO(gpio_num_t reset_pin, gpio_num_t boot0_pin);
-
 //Initialize SPIFFS functionalities
 stm32flash::FlashStatus initSPIFFS(void);
 
-//Reset the STM32Fxx
-void resetSTM(gpio_num_t reset_pin);
-
 //Increment the memory address for the next write operation
 void incrementLoadAddress(char *loadAddr);
-
-//End the connection with STM32Fxx
-void endConn(gpio_num_t reset_pin, gpio_num_t boot0_pin);
 
 //Get in sync with STM32Fxx
 int cmdSync(uart_port_t uart_num);
@@ -120,6 +111,9 @@ esp_err_t flashPage(const char *address, const char *data, uart_port_t uart_num)
 esp_err_t readPage(const char *address, const char *data, uart_port_t uart_num);
 
 //Check if STM32 is present and in bootloader mode
-stm32flash::FlashStatus isSTMPresent(gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num);
+stm32flash::FlashStatus isSTMPresent(gpio_num_t reset_pin, uart_port_t uart_num);
+
+//Nouvelle fonction pour gérer l'état du STM32
+stm32flash::FlashStatus setFlashMode(gpio_num_t reset_pin, gpio_num_t boot0_pin, bool enter_flash_mode);
 
 #endif

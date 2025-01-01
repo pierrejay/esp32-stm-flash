@@ -35,20 +35,6 @@ stm32flash::FlashStatus initFlashUART(uart_port_t uart_num, gpio_num_t tx, gpio_
     return stm32flash::SUCCESS;
 }
 
-stm32flash::FlashStatus initGPIO(gpio_num_t reset_pin, gpio_num_t boot0_pin)
-{
-   if ( gpio_set_direction(reset_pin, GPIO_MODE_OUTPUT) != ESP_OK ||
-       gpio_set_level(reset_pin, HIGH) != ESP_OK ||
-       gpio_set_direction(boot0_pin, GPIO_MODE_OUTPUT) != ESP_OK ||
-       gpio_set_level(boot0_pin, HIGH) != ESP_OK) {
-        logE(TAG_STM_PRO, "Failed to initialize GPIO");
-        return stm32flash::ERROR_GPIO_INIT;
-    }
-
-    logI(TAG_STM_PRO, "%s", "GPIO Initialized");
-    return stm32flash::SUCCESS;
-}
-
 stm32flash::FlashStatus initSPIFFS(void)
 {
     logI(TAG_STM_PRO, "%s", "Initializing SPIFFS");
@@ -108,18 +94,10 @@ void resetSTM(gpio_num_t reset_pin)
     logI(TAG_STM_PRO, "%s", "Finished RESET Procedure");
 }
 
-void endConn(gpio_num_t reset_pin, gpio_num_t boot0_pin)
-{
-    gpio_set_level(reset_pin, LOW);
-    gpio_set_level(boot0_pin, LOW);
-
-    resetSTM(reset_pin);
-
-    logI(TAG_STM_PRO, "%s", "Ending Connection");
-}
-
 stm32flash::FlashStatus setupSTM(gpio_num_t reset_pin, uart_port_t uart_num)
 {
+    logI(TAG_STM_PRO, "%s", "Starting STM32 Setup Procedure");
+
     resetSTM(reset_pin);
     if (!cmdSync(uart_num)) return stm32flash::ERROR_STM_SYNC_FAILED;
     if (!cmdGet(uart_num)) return stm32flash::ERROR_STM_GET_COMMANDS_FAILED;
@@ -127,8 +105,8 @@ stm32flash::FlashStatus setupSTM(gpio_num_t reset_pin, uart_port_t uart_num)
     if (!cmdId(uart_num)) return stm32flash::ERROR_STM_GET_ID_FAILED;
     cmdErase(uart_num);
     cmdExtErase(uart_num);
-    // if (!cmdErase(uart_num)) return stm32flash::ERROR_ERASE_FAILED;
-    // if (!cmdExtErase(uart_num)) return stm32flash::ERROR_EXT_ERASE_FAILED;
+
+    logI(TAG_STM_PRO, "%s", "STM32 Setup Procedure Completed");
     return stm32flash::SUCCESS;
 }
 
@@ -389,11 +367,10 @@ esp_err_t readPage(const char *address, const char *data, uart_port_t uart_num)
     return ESP_OK;
 }
 
-stm32flash::FlashStatus isSTMPresent(gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num) {
+stm32flash::FlashStatus isSTMPresent(gpio_num_t reset_pin, uart_port_t uart_num) {
     logI(TAG_STM_PRO, "Checking STM32 presence...");
     
-    // Reset dans le bon mode
-    gpio_set_level(boot0_pin, HIGH);
+    // Reset (STM should already be set in BOOT0 mode)
     resetSTM(reset_pin);
     
     // Essayer de synchroniser plusieurs fois
@@ -409,4 +386,20 @@ stm32flash::FlashStatus isSTMPresent(gpio_num_t reset_pin, gpio_num_t boot0_pin,
     
     logE(TAG_STM_PRO, "No STM32 detected or not in bootloader mode!");
     return stm32flash::ERROR_STM_NOT_FOUND;
+}
+
+stm32flash::FlashStatus setFlashMode(gpio_num_t reset_pin, gpio_num_t boot0_pin, bool enter_flash_mode) {
+    // Configure les pins en GPIO
+    if (gpio_set_direction(reset_pin, GPIO_MODE_OUTPUT) != ESP_OK ||
+    gpio_set_direction(boot0_pin, GPIO_MODE_OUTPUT) != ESP_OK) {
+        logE(TAG_STM_PRO, "Failed to initialize GPIO");
+        return stm32flash::ERROR_GPIO_INIT;
+    }
+    
+    // Séquence d'entrée/sortie du mode flash
+    gpio_set_level(boot0_pin, enter_flash_mode ? HIGH : LOW);
+    resetSTM(reset_pin);
+
+    logI(TAG_STM_PRO, "STM32 %s flash mode", enter_flash_mode ? "entered" : "exited");
+    return stm32flash::SUCCESS;
 }

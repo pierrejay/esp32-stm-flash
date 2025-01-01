@@ -13,7 +13,7 @@
  *   
  * @return ESP_OK - success, ESP_FAIL - failed
  */
-stm32flash::FlashStatus writeTask(FILE *flash_file, gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num);
+stm32flash::FlashStatus writeTask(FILE *flash_file, gpio_num_t reset_pin, uart_port_t uart_num);
 
 /**
  * @brief Read the flash memory of the STM32Fxx, for verification
@@ -34,6 +34,13 @@ stm32flash::FlashStatus readTask(FILE *flash_file, uart_port_t uart_num);
  *   
  * @return ESP_OK - success, ESP_FAIL - failed
  */
-stm32flash::FlashStatus flashSTM(const char *file_name, gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num);
+stm32flash::FlashStatus flashSTM(
+    const char* filename,
+    gpio_num_t reset_pin,
+    gpio_num_t boot0_pin,
+    gpio_num_t uart_tx,
+    gpio_num_t uart_rx,
+    uart_port_t uart_num
+);
 
 #endif
