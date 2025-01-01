@@ -12,7 +12,7 @@ FlashStatus STM32Flasher::flash(const char* filename) {
         return ERROR_CONFIG_INVALID;
     }
 
-    // Tout est géré dans flashSTM
+    // Everything is handled in flashSTM
     return flashSTM(
         filename,
         config_.reset_pin,

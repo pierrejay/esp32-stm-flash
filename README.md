@@ -62,7 +62,7 @@ STM32 nRESET <-> GPIO ESP32
 
 ### Implementation
 
-Library files are located in `lib/esp32-stm-flash/src/`.
+This repo is a PlatformIO project that can be used as a template for your own projects. Library files are located in `lib/esp32-stm-flash/src/`. 
 
 ```cpp
 // 1. Define the configuration structure with your pin setup
@@ -89,6 +89,7 @@ if (status != stm32flash::SUCCESS) {
 
 // 5. All pins are reset, you can now use the UART lines for normal communication with the STM32 (the pin setup needs to be redefined after flash).
 ```
+Note: the `STM32Flasher` constructor returns a `FlashStatus` that can be catched after initialization to be sure the config is valid. In case of error, the constructor will return `ERROR_CONFIG_INVALID`.
 
 ### UART Configuration
 

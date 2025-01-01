@@ -39,20 +39,20 @@ struct FlashConfig {
 enum FlashStatus {
     SUCCESS = 0,
     
-    // Erreurs d'initialisation
+    // Initialization errors
     ERROR_CONFIG_INVALID,
     ERROR_UART_INIT,
     ERROR_GPIO_INIT,
     ERROR_SPIFFS_INIT,
     
-    // Erreurs de communication STM32
+    // STM32 communication errors
     ERROR_STM_NOT_FOUND,
     ERROR_STM_SYNC_FAILED,
     ERROR_STM_GET_COMMANDS_FAILED,
     ERROR_STM_GET_VERSION_FAILED,
     ERROR_STM_GET_ID_FAILED,
     
-    // Erreurs de flash
+    // Flash errors
     ERROR_FILE_NOT_FOUND,
     ERROR_FILE_EMPTY,
     ERROR_FILE_TOO_LARGE,
@@ -62,7 +62,7 @@ enum FlashStatus {
     ERROR_WRITE_FAILED,
     ERROR_READ_FAILED,
     
-    // Autres erreurs
+    // Other errors
     ERROR_UNKNOWN
 };
 
@@ -75,20 +75,20 @@ static constexpr const char* toString(FlashStatus status) {
     switch(status) {
         case SUCCESS:              return "success";
             
-        // Erreurs d'initialisation
+        // Initialization errors
         case ERROR_CONFIG_INVALID: return "invalid_configuration";
         case ERROR_UART_INIT:      return "uart_initialization_failed";
         case ERROR_GPIO_INIT:      return "gpio_initialization_failed";
         case ERROR_SPIFFS_INIT:    return "spiffs_initialization_failed";
         
-        // Erreurs de communication STM32
+        // STM32 communication errors
         case ERROR_STM_NOT_FOUND:         return "stm32_not_detected";
         case ERROR_STM_SYNC_FAILED:       return "failed_to_synchronize_with_stm32";
         case ERROR_STM_GET_COMMANDS_FAILED: return "failed_to_get_commands_from_stm32";
         case ERROR_STM_GET_ID_FAILED:     return "failed_to_get_stm32_chip_id";
         case ERROR_STM_GET_VERSION_FAILED: return "failed_to_get_bootloader_version";
         
-        // Erreurs de flash
+        // Flash errors
         case ERROR_FILE_NOT_FOUND:  return "file_not_found";
         case ERROR_FILE_EMPTY:      return "file_empty";
         case ERROR_FILE_TOO_LARGE:  return "file_too_large_for_flash_memory";
@@ -98,7 +98,7 @@ static constexpr const char* toString(FlashStatus status) {
         case ERROR_WRITE_FAILED:    return "flash_write_failed";
         case ERROR_READ_FAILED:     return "flash_read_failed";
         
-        // Autres erreurs
+        // Other errors
         case ERROR_UNKNOWN:
         default:                    return "unknown_error";
         }
