@@ -2,14 +2,14 @@
 
 ## Context
 
-In many applications, an ESP32 (main controller with WiFi/BLE capabilities) needs to work alongside an STM32 microcontroller dedicated to specific tasks (motor control, sensor acquisition, etc.). While the ESP32 can be easily programmed over-the-air or via USB, programming the STM32 traditionally requires an ST-Link programmer and access to specific debug pins (SWDIO/SWCLK).
+In many applications, an ESP32 (main controller with WiFi/BLE capabilities) needs to work alongside an STM32 microcontroller dedicated to specific tasks (motor control, sensor acquisition, etc.). While the ESP32 can be easily programmed over-the-air or via USB, programming the STM32 traditionally requires an ST-Link programmer and access to specific debug pins (`SWDIO`/`SWCLK`).
 
 This library enables in-situ programming of the STM32 directly from the ESP32 thanks to the STMicro USART bootloader protocol, using only UART lines and a couple of control signals (`BOOT0`, `RESET`). This approach eliminates the need for:
 - External programmer hardware
 - Debug pins exposure on the PCB
 - Complex toolchain setup
 
-The STM32 firmware (as a .bin file) is stored in the ESP32's flash memory and can be programmed at will. Once programmed, the same UART lines can be used for normal communication between both MCUs.
+The compiled STM32 firmware (as a .bin file) is stored in the ESP32's flash memory and can be programmed at will. Once programmed, the same UART lines can be used for normal communication between both MCUs.
 
 This approach has been successfully tested with the low-end `STM32F030` and `STM32G030` microcontroller series.
 
@@ -20,8 +20,8 @@ The library is based on a C++ reimplementation of [OTA_update_STM32_using_ESP32]
 - Complete C++ encapsulation with a simple public API
 - Comprehensive error handling with specific error codes
 - Streamlined execution flow
-- Enhanced status reporting
-- Pin configuration sequence optimized for shared BOOT0/UART pins
+- Enhanced status reporting at any point in the process
+- Pin configuration sequence optimized for shared `BOOT0`/UART pins
 
 The main class `STM32Flasher` provides a simple interface:
 - Configure pins and UART parameters via `FlashConfig` structure
@@ -33,6 +33,7 @@ The original logging system has been preserved and enhanced to provide detailed 
 ## Setup
 
 ### Basic wiring
+Both microcontrollers must be directly wired together using the following connections:
 ```
 STM32 nRESET <-> GPIO ESP32
  STM32 BOOT0 <-> GPIO ESP32
@@ -52,11 +53,11 @@ A key optimization in this library is the ability to share `BOOT0` with one of t
    - Built-in pull-up resistors on ESP32 UART pins
 
 The library handles the pin mode switching internally:
-1. Before entering flash mode, drive the `BOOT0` pin to HIGH to ensure the STM32 is in bootloader mode
-2. Enable the UART driver just before starting the flash process which will override `BOOT0` level
-3. When leaving flash mode, reset both control pins and set `BOOT0` to LOW to ensure the STM32 will boot from flash
+1. Before entering flash mode, it drives the `BOOT0` pin to HIGH to ensure the STM32 is in bootloader mode
+2. It enables the UART driver just before starting the flash process which will override `BOOT0` level
+3. When leaving flash mode, it disables the UART driver, resets both control pins and sets `BOOT0` to LOW to ensure the STM32 will boot from flash & let the user take over the pins
 
-Be careful especially when using a dev board as some have "hidden" pull-up or series resistor on some pins that might interfere with the `BOOT0` level. For example, the default TX pin of the Seeeduino XIAO ESP32S3 cannot be shared with `BOOT0`, you will have to manually put `BOOT0` to GND after flash completion to boot the STM32 from flash.
+Be careful especially when using a dev board as some have "hidden" pull-up or series resistor on some pins that might interfere with the `BOOT0` level. For example, the default TX pin of the Seeeduino XIAO ESP32S3 cannot be shared with `BOOT0`, you would have to manually put `BOOT0` to GND after flash completion to boot the STM32 from flash. Nevertheless, it works well by using other pins of this board.
 
 
 ## Usage
@@ -64,6 +65,8 @@ Be careful especially when using a dev board as some have "hidden" pull-up or se
 ### Implementation
 
 This repo is a PlatformIO project that can be used as a template for your own projects. Library files are located in `lib/esp32-stm-flash/src/`. 
+
+The `STM32Flasher` object can be initialized at any time during the program lifecycle to start a flashing procedure:
 
 ```cpp
 // 1. Define the configuration structure with your pin setup
@@ -88,9 +91,10 @@ if (status != stm32flash::SUCCESS) {
     Serial.printf("Flashing failed: %s\n", stm32flash::toString(status));
 }
 
-// 5. All pins are reset, you can now use the UART lines for normal communication with the STM32 (the pin setup needs to be redefined after flash).
+// 5. All pins are reset, you can now use the UART lines for normal communication
+// with the STM32 (the pin setup needs to be redefined after flash if required).
 ```
-Note: the `STM32Flasher` constructor returns a `FlashStatus` that can be catched after initialization to be sure the config is valid. In case of error, the constructor will return `ERROR_CONFIG_INVALID`.
+Note: The config used to initialize the `STM32Flasher` object is checked at runtime. If the config is invalid, the `flash()` method will return `ERROR_CONFIG_INVALID`. This solution was chosen rather than putting all parameters in the constructor to maintain code clarity with designated initializers (which C++17 cannot check at compile time).
 
 ### UART Configuration
 
