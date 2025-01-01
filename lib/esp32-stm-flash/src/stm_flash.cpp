@@ -43,7 +43,7 @@ stm32flash::FlashStatus flashSTM(const char *file_name, gpio_num_t reset_pin, gp
     }
 
     // Enter flash mode
-    if (setFlashMode(reset_pin, boot0_pin, true) != stm32flash::SUCCESS) {
+    if (setFlashMode(reset_pin, boot0_pin, uart_num, true) != stm32flash::SUCCESS) {
         logE(TAG_STM_FLASH, "Failed to set flash mode, aborting flash!");
         return stm32flash::ERROR_GPIO_INIT;
     }
@@ -92,7 +92,7 @@ stm32flash::FlashStatus flashSTM(const char *file_name, gpio_num_t reset_pin, gp
     }
     
     // Disable flash mode and reboot STM32
-    setFlashMode(reset_pin, boot0_pin, false);
+    setFlashMode(reset_pin, boot0_pin, uart_num, false);
 
     return stm32flash::SUCCESS;
 }

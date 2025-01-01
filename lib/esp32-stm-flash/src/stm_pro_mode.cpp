@@ -388,16 +388,25 @@ stm32flash::FlashStatus isSTMPresent(gpio_num_t reset_pin, uart_port_t uart_num)
     return stm32flash::ERROR_STM_NOT_FOUND;
 }
 
-stm32flash::FlashStatus setFlashMode(gpio_num_t reset_pin, gpio_num_t boot0_pin, bool enter_flash_mode) {
-    // Configure les pins en GPIO
+stm32flash::FlashStatus setFlashMode(gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num, bool enter_flash_mode) {
+    
+    // Delete any existing UART driver to be sure both control pins are free (if using shared BOOT0/UART pins)
+    uart_driver_delete(uart_num);
+
+    // Reset both control pins
+    gpio_reset_pin(boot0_pin);
+    gpio_reset_pin(reset_pin);
+    
+    // Configure pins in GPIO mode
     if (gpio_set_direction(reset_pin, GPIO_MODE_OUTPUT) != ESP_OK ||
-    gpio_set_direction(boot0_pin, GPIO_MODE_OUTPUT) != ESP_OK) {
+        gpio_set_direction(boot0_pin, GPIO_MODE_OUTPUT) != ESP_OK) {
         logE(TAG_STM_PRO, "Failed to initialize GPIO");
         return stm32flash::ERROR_GPIO_INIT;
     }
     
-    // Séquence d'entrée/sortie du mode flash
+    // Flash mode sequence
     gpio_set_level(boot0_pin, enter_flash_mode ? HIGH : LOW);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
     resetSTM(reset_pin);
 
     logI(TAG_STM_PRO, "STM32 %s flash mode", enter_flash_mode ? "entered" : "exited");

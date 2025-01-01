@@ -114,6 +114,6 @@ esp_err_t readPage(const char *address, const char *data, uart_port_t uart_num);
 stm32flash::FlashStatus isSTMPresent(gpio_num_t reset_pin, uart_port_t uart_num);
 
 //Nouvelle fonction pour gérer l'état du STM32
-stm32flash::FlashStatus setFlashMode(gpio_num_t reset_pin, gpio_num_t boot0_pin, bool enter_flash_mode);
+stm32flash::FlashStatus setFlashMode(gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num, bool enter_flash_mode);
 
 #endif
