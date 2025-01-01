@@ -1,9 +1,7 @@
 #ifndef _STM_PRO_MODE_H
 #define _STM_PRO_MODE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "STM32Flasher.h"  // Pour avoir accès à FlashStatus
 
 #include "logger.h"
 
@@ -59,73 +57,69 @@ extern "C" {
 #define MAX_FLASH_SIZE 32768 // 32KB
 
 //Initialize UART functionalities
-void initFlashUART(void);
+stm32flash::FlashStatus initFlashUART(uart_port_t uart_num, gpio_num_t tx, gpio_num_t rx);
 
 //Initialize GPIO functionalities
-void initGPIO(void);
+stm32flash::FlashStatus initGPIO(gpio_num_t reset_pin, gpio_num_t boot0_pin);
 
 //Initialize SPIFFS functionalities
-void initSPIFFS(void);
+stm32flash::FlashStatus initSPIFFS(void);
 
 //Reset the STM32Fxx
-void resetSTM(void);
+void resetSTM(gpio_num_t reset_pin);
 
 //Increment the memory address for the next write operation
 void incrementLoadAddress(char *loadAddr);
 
 //End the connection with STM32Fxx
-void endConn(void);
+void endConn(gpio_num_t reset_pin, gpio_num_t boot0_pin);
 
 //Get in sync with STM32Fxx
-int cmdSync(void);
+int cmdSync(uart_port_t uart_num);
 
 //Get the version and the allowed commands supported by the current version of the bootloader
-int cmdGet(void);
+int cmdGet(uart_port_t uart_num);
 
 //Get the bootloader version and the Read Protection status of the Flash memory
-int cmdVersion(void);
+int cmdVersion(uart_port_t uart_num);
 
 //Get the chip ID
-int cmdId(void);
+int cmdId(uart_port_t uart_num);
 
 //Erase from one to all the Flash memory pages
-int cmdErase(void);
+int cmdErase(uart_port_t uart_num);
 
 //Erases from one to all the Flash memory pages using 2-byte addressing mode
-int cmdExtErase(void);
+int cmdExtErase(uart_port_t uart_num);
 
 //Setup STM32Fxx for the 'flashing' process
-void setupSTM(void);
+stm32flash::FlashStatus setupSTM(gpio_num_t reset_pin, uart_port_t uart_num);
 
 //Write data to flash memory address
-int cmdWrite(void);
+int cmdWrite(uart_port_t uart_num);
 
 //Read data from flash memory address
-int cmdRead(void);
+int cmdRead(uart_port_t uart_num);
 
 //UART send data to STM32Fxx & wait for response
-int sendBytes(const char *bytes, int count, int resp);
+int sendBytes(const char *bytes, int count, int resp, uart_port_t uart_num);
 
 //UART send data byte-by-byte to STM32Fxx
-int sendData(const char *logName, const char *data, const int count);
+int sendData(const char *logName, const char *data, const int count, uart_port_t uart_num);
 
 //Wait for response from STM32Fxx
-int waitForSerialData(int dataCount, int timeout);
+int waitForSerialData(int dataCount, int timeout, uart_port_t uart_num);
 
 //Send the STM32Fxx the memory address, to be written
-int loadAddress(const char adrMS, const char adrMI, const char adrLI, const char adrLS);
+int loadAddress(const char adrMS, const char adrMI, const char adrLI, const char adrLS, uart_port_t uart_num);
 
 //UART write the flash memory address of the STM32Fxx with blocks of data 
-esp_err_t flashPage(const char *address, const char *data);
+esp_err_t flashPage(const char *address, const char *data, uart_port_t uart_num);
 
 //UART read the flash memory address of the STM32Fxx and verify with the given block of data 
-esp_err_t readPage(const char *address, const char *data);
+esp_err_t readPage(const char *address, const char *data, uart_port_t uart_num);
 
 //Check if STM32 is present and in bootloader mode
-bool isSTMPresent(void);
-
-#ifdef __cplusplus
-}
-#endif
+stm32flash::FlashStatus isSTMPresent(gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num);
 
 #endif

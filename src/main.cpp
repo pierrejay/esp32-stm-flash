@@ -1,36 +1,43 @@
 #include <Arduino.h>
-#include "../lib/stm_flash/stm_flash.h"
+#include <STM32Flasher.h>
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
 
-  Serial.begin(9600); // USB for debugging
+    Serial.begin(9600); // USB for debugging
+    
+    // Configuration du flasher
+    stm32flash::FlashConfig config = {
+        .uart_tx = GPIO_NUM_43,
+        .uart_rx = GPIO_NUM_6,
+        .reset_pin = GPIO_NUM_5,
+        .boot0_pin = GPIO_NUM_4,
+        .uart_num = (uart_port_t)UART_NUM_1,
+        .debug_serial = &Serial
+    };
 
-  // Initialisation
-  initFlashUART();
-  // initGPIO();  // Supprimé car géré dans flashSTM()
-  initSPIFFS();
-  
-  // Blink LED 
-  for (int i = 0; i < 10; i++) {
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    delay(200);
-  }
+    // Création du flasher avec la config
+    stm32flash::STM32Flasher flasher(config);
+
+    // Blink LED pendant l'init
+    for (int i = 0; i < 10; i++) {
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        delay(200);
+    }
+
+    Serial.println("Starting STM32 flash...");
+
+    // Flash du STM32
+    stm32flash::FlashStatus status = flasher.flash("blink1000.bin");
+    if (status != stm32flash::SUCCESS) {
+        Serial.printf("STM32 flash aborted with error: %s\n", stm32flash::toString(status));
+    } else {
+        Serial.println("STM32 flash completed!");
+    }
 }
 
 void loop() {
-  Serial.println("Starting STM32 flash...");
-
-  esp_err_t err = flashSTM("blink.bin");  // Cette fonction gère maintenant tout le processus
-  if (err != ESP_OK) {
-    Serial.printf("STM32 flash aborted with error");
-  } else {
-    Serial.println("STM32 flash completed!");
-  }
-  // endConn() est maintenant appelé automatiquement dans flashSTM()
-
-  while(true) {
     digitalWrite(LED_BUILTIN, LOW);
-  }
+    delay(1000);
 }

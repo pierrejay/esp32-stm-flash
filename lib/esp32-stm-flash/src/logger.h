@@ -3,10 +3,6 @@
 
 #include <Arduino.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -25,9 +21,5 @@ extern "C" {
 void logger(esp_log_level_t level, const char *TAG, int line, const char *func, const char *fmt, ...);
 bool setLogToFile(void);
 bool isLoggingToFileEnabled(void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

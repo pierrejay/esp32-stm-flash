@@ -3,7 +3,7 @@
 static const char *TAG_STM_PRO = "stm_pro_mode";
 
 //Functions for custom adjustments
-void initFlashUART(void)
+stm32flash::FlashStatus initFlashUART(uart_port_t uart_num, gpio_num_t tx, gpio_num_t rx)
 {
     const uart_config_t uart_config = {
         .baud_rate = UART_BAUD_RATE,
@@ -13,28 +13,43 @@ void initFlashUART(void)
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
     };
 
-    esp_err_t err = uart_driver_install(UART_CONTROLLER, UART_BUF_SIZE * 2, 0, 0, NULL, 0);
+    esp_err_t err = uart_driver_install(uart_num, UART_BUF_SIZE * 2, 0, 0, NULL, 0);
     if (err != ESP_OK) {
-        logE(TAG_STM_PRO, "Failed to install UART driver: %d", err);
-        return;
+        logE(TAG_STM_PRO, "Failed to install UART driver");
+        return stm32flash::ERROR_UART_INIT;
     }
 
-    err = uart_param_config(UART_CONTROLLER, &uart_config);
+    err = uart_param_config(uart_num, &uart_config);
     if (err != ESP_OK) {
-        logE(TAG_STM_PRO, "Failed to configure UART: %d", err);
-        return;
+        logE(TAG_STM_PRO, "Failed to configure UART");
+        return stm32flash::ERROR_UART_INIT;
     }
 
-    err = uart_set_pin(UART_CONTROLLER, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    err = uart_set_pin(uart_num, tx, rx, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     if (err != ESP_OK) {
-        logE(TAG_STM_PRO, "Failed to set UART pins: %d", err);
-        return;
+        logE(TAG_STM_PRO, "Failed to set UART pins");
+        return stm32flash::ERROR_UART_INIT;
     }
 
     logI(TAG_STM_PRO, "Initialized Flash UART successfully");
+    return stm32flash::SUCCESS;
 }
 
-void initSPIFFS(void)
+stm32flash::FlashStatus initGPIO(gpio_num_t reset_pin, gpio_num_t boot0_pin)
+{
+   if ( gpio_set_direction(reset_pin, GPIO_MODE_OUTPUT) != ESP_OK ||
+       gpio_set_level(reset_pin, HIGH) != ESP_OK ||
+       gpio_set_direction(boot0_pin, GPIO_MODE_OUTPUT) != ESP_OK ||
+       gpio_set_level(boot0_pin, HIGH) != ESP_OK) {
+        logE(TAG_STM_PRO, "Failed to initialize GPIO");
+        return stm32flash::ERROR_GPIO_INIT;
+    }
+
+    logI(TAG_STM_PRO, "%s", "GPIO Initialized");
+    return stm32flash::SUCCESS;
+}
+
+stm32flash::FlashStatus initSPIFFS(void)
 {
     logI(TAG_STM_PRO, "%s", "Initializing SPIFFS");
 
@@ -61,14 +76,14 @@ void initSPIFFS(void)
         {
             logE(TAG_STM_PRO, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
         }
-        return;
+        return stm32flash::ERROR_SPIFFS_INIT;
     }
 
 /*  // Formatting SPIFFS - Use only for debugging
     if (esp_spiffs_format(NULL) != ESP_OK)
     {
         logE(TAG_STM_PRO, "%s", "Failed to format SPIFFS");
-        return;
+        return stm32flash::ERROR_SPIFFS_INIT;
     }
 */
 
@@ -76,156 +91,151 @@ void initSPIFFS(void)
     if (esp_spiffs_info(NULL, &total, &used) == ESP_OK)
     {
         logI(TAG_STM_PRO, "Partition size: total: %d, used: %d", total, used);
+        return stm32flash::SUCCESS;
     }
+    return stm32flash::ERROR_SPIFFS_INIT;
 }
 
-void initGPIO(void)
-{
-    gpio_set_direction(RESET_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_level(RESET_PIN, HIGH);
-    gpio_set_direction(BOOT0_PIN, GPIO_MODE_OUTPUT);
-    gpio_set_level(BOOT0_PIN, HIGH);
-
-    logI(TAG_STM_PRO, "%s", "GPIO Initialized");
-}
-
-void resetSTM(void)
+void resetSTM(gpio_num_t reset_pin)
 {
     logI(TAG_STM_PRO, "%s", "Starting RESET Procedure");
 
-    gpio_set_level(RESET_PIN, LOW);
+    gpio_set_level(reset_pin, LOW);
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    gpio_set_level(RESET_PIN, HIGH);
+    gpio_set_level(reset_pin, HIGH);
     vTaskDelay(500 / portTICK_PERIOD_MS);
 
     logI(TAG_STM_PRO, "%s", "Finished RESET Procedure");
 }
 
-void endConn(void)
+void endConn(gpio_num_t reset_pin, gpio_num_t boot0_pin)
 {
-    gpio_set_level(RESET_PIN, LOW);
-    gpio_set_level(BOOT0_PIN, LOW);
+    gpio_set_level(reset_pin, LOW);
+    gpio_set_level(boot0_pin, LOW);
 
-    resetSTM();
+    resetSTM(reset_pin);
 
     logI(TAG_STM_PRO, "%s", "Ending Connection");
 }
 
-void setupSTM(void)
+stm32flash::FlashStatus setupSTM(gpio_num_t reset_pin, uart_port_t uart_num)
 {
-    resetSTM();
-    cmdSync();
-    cmdGet();
-    cmdVersion();
-    cmdId();
-    cmdErase();
-    cmdExtErase();
+    resetSTM(reset_pin);
+    if (!cmdSync(uart_num)) return stm32flash::ERROR_STM_SYNC_FAILED;
+    if (!cmdGet(uart_num)) return stm32flash::ERROR_STM_GET_COMMANDS_FAILED;
+    if (!cmdVersion(uart_num)) return stm32flash::ERROR_STM_GET_VERSION_FAILED;
+    if (!cmdId(uart_num)) return stm32flash::ERROR_STM_GET_ID_FAILED;
+    cmdErase(uart_num);
+    cmdExtErase(uart_num);
+    // if (!cmdErase(uart_num)) return stm32flash::ERROR_ERASE_FAILED;
+    // if (!cmdExtErase(uart_num)) return stm32flash::ERROR_EXT_ERASE_FAILED;
+    return stm32flash::SUCCESS;
 }
 
-int cmdSync(void)
+int cmdSync(uart_port_t uart_num)
 {
     logI(TAG_STM_PRO, "%s", "SYNC");
 
     char bytes[] = {0x7F};
     int resp = 1;
-    return sendBytes(bytes, sizeof(bytes), resp);
+    return sendBytes(bytes, sizeof(bytes), resp, uart_num);
 }
 
-int cmdGet(void)
+int cmdGet(uart_port_t uart_num)
 {
     logI(TAG_STM_PRO, "%s", "GET");
 
     char bytes[] = {0x00, 0xFF};
     int resp = 15;
-    return sendBytes(bytes, sizeof(bytes), resp);
+    return sendBytes(bytes, sizeof(bytes), resp, uart_num);
 }
 
-int cmdVersion(void)
+int cmdVersion(uart_port_t uart_num)
 {
     logI(TAG_STM_PRO, "%s", "GET VERSION & READ PROTECTION STATUS");
 
     char bytes[] = {0x01, 0xFE};
     int resp = 5;
-    return sendBytes(bytes, sizeof(bytes), resp);
+    return sendBytes(bytes, sizeof(bytes), resp, uart_num);
 }
 
-int cmdId(void)
+int cmdId(uart_port_t uart_num)
 {
     logI(TAG_STM_PRO, "%s", "CHECK ID");
     char bytes[] = {0x02, 0xFD};
     int resp = 5;
-    return sendBytes(bytes, sizeof(bytes), resp);
+    return sendBytes(bytes, sizeof(bytes), resp, uart_num);
 }
 
-int cmdErase(void)
+int cmdErase(uart_port_t uart_num)
 {
     logI(TAG_STM_PRO, "%s", "ERASE MEMORY");
     char bytes[] = {0x43, 0xBC};
     int resp = 1;
-    int a = sendBytes(bytes, sizeof(bytes), resp);
+    int a = sendBytes(bytes, sizeof(bytes), resp, uart_num);
 
     if (a == 1)
     {
         char params[] = {0xFF, 0x00};
         resp = 1;
 
-        return sendBytes(params, sizeof(params), resp);
+        return sendBytes(params, sizeof(params), resp, uart_num);
     }
     return 0;
 }
 
-int cmdExtErase(void)
+int cmdExtErase(uart_port_t uart_num)
 {
     logI(TAG_STM_PRO, "%s", "EXTENDED ERASE MEMORY");
     char bytes[] = {0x44, 0xBB};
     int resp = 1;
-    int a = sendBytes(bytes, sizeof(bytes), resp);
+    int a = sendBytes(bytes, sizeof(bytes), resp, uart_num);
 
     if (a == 1)
     {
         char params[] = {0xFF, 0xFF, 0x00};
         resp = 1;
 
-        return sendBytes(params, sizeof(params), resp);
+        return sendBytes(params, sizeof(params), resp, uart_num);
     }
     return 0;
 }
 
-int cmdWrite(void)
+int cmdWrite(uart_port_t uart_num)
 {
     logI(TAG_STM_PRO, "%s", "WRITE MEMORY");
     char bytes[2] = {0x31, 0xCE};
     int resp = 1;
-    return sendBytes(bytes, sizeof(bytes), resp);
+    return sendBytes(bytes, sizeof(bytes), resp, uart_num);
 }
 
-int cmdRead(void)
+int cmdRead(uart_port_t uart_num)
 {
     logI(TAG_STM_PRO, "%s", "READ MEMORY");
     char bytes[2] = {0x11, 0xEE};
     int resp = 1;
-    return sendBytes(bytes, sizeof(bytes), resp);
+    return sendBytes(bytes, sizeof(bytes), resp, uart_num);
 }
 
-int loadAddress(const char adrMS, const char adrMI, const char adrLI, const char adrLS)
+int loadAddress(const char adrMS, const char adrMI, const char adrLI, const char adrLS, uart_port_t uart_num)
 {
-    char xor = adrMS ^ adrMI ^ adrLI ^ adrLS;
-    char params[] = {adrMS, adrMI, adrLI, adrLS, xor};
+    char xor_ = adrMS ^ adrMI ^ adrLI ^ adrLS;
+    char params[] = {adrMS, adrMI, adrLI, adrLS, xor_};
     int resp = 1;
 
     // ESP_LOG_BUFFER_HEXDUMP("LOAD ADDR", params, sizeof(params), ESP_LOG_DEBUG);
-    return sendBytes(params, sizeof(params), resp);
+    return sendBytes(params, sizeof(params), resp, uart_num);
 }
 
-int sendBytes(const char *bytes, int count, int resp)
+int sendBytes(const char *bytes, int count, int resp, uart_port_t uart_num)
 {
-    sendData(TAG_STM_PRO, bytes, count);
-    int length = waitForSerialData(resp, SERIAL_TIMEOUT);
+    sendData(TAG_STM_PRO, bytes, count, uart_num);
+    int length = waitForSerialData(resp, SERIAL_TIMEOUT, uart_num);
 
-    if (length > 0)
-    {
+    if (length > 0) {
+        
         uint8_t data[length];
-        const int rxBytes = uart_read_bytes(UART_CONTROLLER, data, length, 1000 / portTICK_RATE_MS);
+        const int rxBytes = uart_read_bytes(uart_num, data, length, 1000 / portTICK_RATE_MS);
 
         if (rxBytes > 0 && data[0] == ACK)
         {
@@ -248,20 +258,19 @@ int sendBytes(const char *bytes, int count, int resp)
     return 0;
 }
 
-int sendData(const char *logName, const char *data, const int count)
+int sendData(const char *logName, const char *data, const int count, uart_port_t uart_num)
 {
-    const int txBytes = uart_write_bytes(UART_CONTROLLER, data, count);
-    //logD(logName, "Wrote %d bytes", count);
+    const int txBytes = uart_write_bytes(uart_num, data, count);
     return txBytes;
 }
 
-int waitForSerialData(int dataCount, int timeout)
+int waitForSerialData(int dataCount, int timeout, uart_port_t uart_num)
 {
     int timer = 0;
     int length = 0;
     while (timer < timeout)
     {
-        uart_get_buffered_data_len(UART_CONTROLLER, (size_t *)&length);
+        uart_get_buffered_data_len(uart_num, (size_t *)&length);
         if (length >= dataCount)
         {
             return length;
@@ -287,40 +296,40 @@ void incrementLoadAddress(char *loadAddr)
     }
 }
 
-esp_err_t flashPage(const char *address, const char *data)
+esp_err_t flashPage(const char *address, const char *data, uart_port_t uart_num)
 {
     logI(TAG_STM_PRO, "%s", "Flashing Page");
 
-    if (cmdWrite() != 1) {
+    if (cmdWrite(uart_num) != 1) {
         logE(TAG_STM_PRO, "Write command failed");
         return ESP_FAIL;
     }
 
-    if (loadAddress(address[0], address[1], address[2], address[3]) != 1) {
+    if (loadAddress(address[0], address[1], address[2], address[3], uart_num) != 1) {
         logE(TAG_STM_PRO, "Load address failed");
         return ESP_FAIL;
     }
 
     //ESP_LOG_BUFFER_HEXDUMP("FLASH PAGE", data, 256, ESP_LOG_DEBUG);
 
-    char xor = 0xFF;
+    char xor_ = 0xFF;
     char sz = 0xFF;
 
-    sendData(TAG_STM_PRO, &sz, 1);
+    sendData(TAG_STM_PRO, &sz, 1, uart_num);
 
     for (int i = 0; i < 256; i++)
     {
-        sendData(TAG_STM_PRO, &data[i], 1);
-        xor ^= data[i];
+        sendData(TAG_STM_PRO, &data[i], 1, uart_num);
+        xor_ ^= data[i];
     }
 
-    sendData(TAG_STM_PRO, &xor, 1);
+    sendData(TAG_STM_PRO, &xor_, 1, uart_num);
 
-    int length = waitForSerialData(1, SERIAL_TIMEOUT);
+    int length = waitForSerialData(1, SERIAL_TIMEOUT, uart_num);
     if (length > 0)
     {
         uint8_t data[length];
-        const int rxBytes = uart_read_bytes(UART_CONTROLLER, data, length, 1000 / portTICK_RATE_MS);
+        const int rxBytes = uart_read_bytes(uart_num, data, length, 1000 / portTICK_RATE_MS);
         if (rxBytes > 0 && data[0] == ACK)
         {
             logI(TAG_STM_PRO, "%s", "Flash Success");
@@ -339,21 +348,21 @@ esp_err_t flashPage(const char *address, const char *data)
     return ESP_FAIL;
 }
 
-esp_err_t readPage(const char *address, const char *data)
+esp_err_t readPage(const char *address, const char *data, uart_port_t uart_num)
 {
     logI(TAG_STM_PRO, "%s", "Reading page");
     char param[] = {0xFF, 0x00};
 
-    cmdRead();
+    cmdRead(uart_num);
 
-    loadAddress(address[0], address[1], address[2], address[3]);
+    loadAddress(address[0], address[1], address[2], address[3], uart_num);
 
-    sendData(TAG_STM_PRO, param, sizeof(param));
-    int length = waitForSerialData(257, SERIAL_TIMEOUT);
+    sendData(TAG_STM_PRO, param, sizeof(param), uart_num);
+    int length = waitForSerialData(257, SERIAL_TIMEOUT, uart_num);
     if (length > 0)
     {
         uint8_t uart_data[length];
-        const int rxBytes = uart_read_bytes(UART_NUM_1, uart_data, length, 1000 / portTICK_RATE_MS);
+        const int rxBytes = uart_read_bytes(uart_num, uart_data, length, 1000 / portTICK_RATE_MS);
 
         if (rxBytes > 0 && uart_data[0] == 0x79)
         {
@@ -380,22 +389,24 @@ esp_err_t readPage(const char *address, const char *data)
     return ESP_OK;
 }
 
-bool isSTMPresent(void) {
+stm32flash::FlashStatus isSTMPresent(gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num) {
     logI(TAG_STM_PRO, "Checking STM32 presence...");
     
     // Reset dans le bon mode
-    gpio_set_level(BOOT0_PIN, HIGH);  // Mode bootloader
-    resetSTM();
+    gpio_set_level(boot0_pin, HIGH);
+    resetSTM(reset_pin);
     
     // Essayer de synchroniser plusieurs fois
     for(int i = 0; i < 3; i++) {
-        if(cmdSync() == 1 && cmdGet() == 1) {  // Vérifier aussi cmdGet
-            logI(TAG_STM_PRO, "STM32 detected in bootloader mode!");
-            return true;
+        if(cmdSync(uart_num) == 1) {
+            if(cmdGet(uart_num) == 1) {
+                logI(TAG_STM_PRO, "STM32 detected in bootloader mode!");
+                return stm32flash::SUCCESS;
+            }
         }
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }
     
     logE(TAG_STM_PRO, "No STM32 detected or not in bootloader mode!");
-    return false;
+    return stm32flash::ERROR_STM_NOT_FOUND;
 }

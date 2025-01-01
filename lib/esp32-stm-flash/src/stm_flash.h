@@ -1,10 +1,6 @@
 #ifndef _STM_FLASH_H
 #define _STM_FLASH_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "stm_pro_mode.h"
 
 /**
@@ -17,7 +13,7 @@ extern "C" {
  *   
  * @return ESP_OK - success, ESP_FAIL - failed
  */
-esp_err_t writeTask(FILE *flash_file);
+stm32flash::FlashStatus writeTask(FILE *flash_file, gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num);
 
 /**
  * @brief Read the flash memory of the STM32Fxx, for verification
@@ -29,7 +25,7 @@ esp_err_t writeTask(FILE *flash_file);
  *   
  * @return ESP_OK - success, ESP_FAIL - failed
  */
-esp_err_t readTask(FILE *flash_file);
+stm32flash::FlashStatus readTask(FILE *flash_file, uart_port_t uart_num);
 
 /**
  * @brief Flash the .bin file passed, to STM32Fxx, with read verification
@@ -38,10 +34,6 @@ esp_err_t readTask(FILE *flash_file);
  *   
  * @return ESP_OK - success, ESP_FAIL - failed
  */
-esp_err_t flashSTM(const char *file_name);
-
-#ifdef __cplusplus
-}
-#endif
+stm32flash::FlashStatus flashSTM(const char *file_name, gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num);
 
 #endif

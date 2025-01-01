@@ -45,10 +45,6 @@ void logger(esp_log_level_t level, const char *TAG, int line, const char *func, 
     vsprintf(&log_print_buffer[len], fmt, args);
     va_end(args);
 
-    if (Serial) {
-        Serial.printf("[%s] %s\n", logLevel[level - 1], log_print_buffer);
-    }
-
     if (isLoggingToFileEnabled())
     {
         writelogToFile(level, log_print_buffer);
@@ -57,19 +53,19 @@ void logger(esp_log_level_t level, const char *TAG, int line, const char *func, 
     switch (level)
     {
     case ESP_LOG_ERROR:
-        ESP_LOGE("", "%s", log_print_buffer);
+        ESP_LOGE(TAG, "%s", log_print_buffer);
         break;
     case ESP_LOG_WARN:
-        ESP_LOGW("", "%s", log_print_buffer);
+        ESP_LOGW(TAG, "%s", log_print_buffer);
         break;
     case ESP_LOG_INFO:
-        ESP_LOGI("", "%s", log_print_buffer);
+        ESP_LOGI(TAG, "%s", log_print_buffer);
         break;
     case ESP_LOG_DEBUG:
-        ESP_LOGD("", "%s", log_print_buffer);
+        ESP_LOGD(TAG, "%s", log_print_buffer);
         break;
     case ESP_LOG_VERBOSE:
-        ESP_LOGV("", "%s", log_print_buffer);
+        ESP_LOGV(TAG, "%s", log_print_buffer);
         break;
     default:
         break;
