@@ -30,7 +30,17 @@ The main class `STM32Flasher` provides a simple interface:
 
 The original logging system has been preserved and enhanced to provide detailed operation feedback.
 
-## Pin Optimization Trick
+## Setup
+
+### Basic wiring
+```
+STM32 nRESET <-> GPIO ESP32
+ STM32 BOOT0 <-> GPIO ESP32
+    STM32 TX <-> RX ESP32
+    STM32 RX <-> TX ESP32
+```.
+
+### Pin Optimization Trick
 
 A key optimization in this library is the ability to share `BOOT0` with one of the UART pins, reducing the total pin count from 4 to 3. This is possible because:
 
@@ -50,15 +60,6 @@ Be careful especially when using a dev board as some have "hidden" pull-up or se
 
 
 ## Usage
-
-### Basic wiring
-
-```
-STM32 nRESET <-> GPIO ESP32
- STM32 BOOT0 <-> GPIO ESP32
-    STM32 TX <-> RX ESP32
-    STM32 RX <-> TX ESP32
-```
 
 ### Implementation
 
@@ -111,8 +112,6 @@ The STM32 binary must be stored in ESP32's flash memory. Using PlatformIO:
 3. The library will read it using the provided filename
 
 Alternatively, you can implement your own file storage method - the library only requires a valid filename pointing to a binary in the mounted filesystem.
-
-Note that while this documentation uses SPIFFS, the filesystem type can be changed as long as it supports standard file operations (fopen, fread, etc.).
 
 ## Credits
 
