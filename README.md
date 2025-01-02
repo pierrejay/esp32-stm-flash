@@ -15,20 +15,19 @@ This approach has been successfully tested with the low-end `STM32F030` and `STM
 
 ## Design 
 
-The library is based on a C++ reimplementation of [OTA_update_STM32_using_ESP32](https://github.com/ESP32-Musings/OTA_update_STM32_using_ESP32) by ESP32-Musings. While the core protocol implementation remains similar, several improvements have been made:
+The library is based on a C++ reimplementation of [OTA_update_STM32_using_ESP32](https://github.com/ESP32-Musings/OTA_update_STM32_using_ESP32) by ESP32-Musings. It is compatible with both the Arduino framework and ESP-IDF. While the core protocol implementation remains similar, several improvements have been made:
 
-- Complete C++ encapsulation with a simple public API
+- Simple API with flexible configuration
 - Comprehensive error handling with specific error codes
 - Streamlined execution flow
-- Enhanced status reporting at any point in the process
 - Pin configuration sequence optimized for shared `BOOT0`/UART pins
 
-The main class `STM32Flasher` provides a simple interface:
+The public API is minimal:
 - Configure pins and UART parameters via `FlashConfig` structure
 - Single `flash()` method that handles the entire process
 - Status reporting via `FlashStatus` error codes
 
-The original logging system has been preserved and enhanced to provide detailed operation feedback.
+The original logging system has been preserved as-is.
 
 ## Setup
 
@@ -66,12 +65,27 @@ Be careful especially when using a dev board as some have "hidden" pull-up or se
 
 This repo is a PlatformIO project that can be used as a template for your own projects. Library files are located in `lib/esp32-stm-flash/src/`. 
 
-The `STM32Flasher` object can be initialized at any time during the program lifecycle to start a flashing procedure:
+```
+lib/esp32-stm-flash/
+├── src/
+│   ├── STM32Flasher.h     # Main header file with public API
+│   ├── STM32Flasher.cpp   # Implementation of the public API
+│   ├── stm_flash.h        # Internal flash operations
+│   ├── stm_pro_mode.h     # Protocol implementation
+│   ├── stm_pro_mode.cpp   # Protocol implementation
+│   ├── logger.h           # Logging utilities
+│   └── logger.cpp         # Logging implementation
+```
+
+To start the flashing process, define the configuration structure with your pin setup and call the `flash()` method:
 
 ```cpp
+#include <STM32Flasher.h>
+using namespace stm32flash; // This is optional, but it makes the code more readable
+
 // 1. Define the configuration structure with your pin setup
 // (uart_rx and uart_tx refer to ESP32 side)
-stm32flash::FlashConfig config = {
+FlashConfig config = {
     .reset_pin = GPIO_NUM_5,
     .boot0_pin = GPIO_NUM_4, // Can be mapped to RX or TX pin
     .uart_tx = GPIO_NUM_43,
@@ -79,22 +93,19 @@ stm32flash::FlashConfig config = {
     .uart_num = (uart_port_t)UART_NUM_1
 };
 
-// 2. Create the flasher object with the config
-stm32flash::STM32Flasher flasher(config);
+// 2. Start the flashing process
+FlashStatus status = flash(config, "firmware.bin");
 
-// 3. Start the flashing process
-stm32flash::FlashStatus status = flasher.flash("firmware.bin");
-
-// 4. Handle the status
+// 3. Handle the status
 // (refer to STM32Flasher.h for the full list of error codes)
-if (status != stm32flash::SUCCESS) {
-    Serial.printf("Flashing failed: %s\n", stm32flash::toString(status));
+if (status != SUCCESS) {
+    Serial.printf("Flashing failed: %s\n", toString(status));
 }
 
-// 5. All pins are reset, you can now use the UART lines for normal communication
+// 4. All pins are reset, you can now use the UART lines for normal communication
 // with the STM32 (the pin setup needs to be redefined after flash if required).
 ```
-Note: The config used to initialize the `STM32Flasher` object is checked at runtime. If the config is invalid, the `flash()` method will return `ERROR_CONFIG_INVALID`. This solution was chosen rather than putting all parameters in the constructor to maintain code clarity with designated initializers (which C++17 cannot check at compile time).
+Note: The config passed to the `flash()` method is checked at runtime. If the config is invalid, it will return `ERROR_CONFIG_INVALID`.
 
 ### UART Configuration
 
@@ -117,9 +128,19 @@ The STM32 binary must be stored in ESP32's flash memory. Using PlatformIO:
 
 Alternatively, you can implement your own file storage method - the library only requires a valid filename pointing to a binary in the mounted filesystem.
 
+### Logging
+
+The internal logging system makes call to the `ESP_LOG` macros. To enable all logs, add this line to your `platformio.ini`:
+
+```ini
+build_flags = 
+    -DESP_LOG_LEVEL=ESP_LOG_INFO  ; for ESP-IDF
+    -DCORE_DEBUG_LEVEL=3          ; for Arduino-ESP32
+```
+
 ## Credits
 
-This library is a C++ adaptation of [OTA_update_STM32_using_ESP32](https://github.com/ESP32-Musings/OTA_update_STM32_using_ESP32), enhanced with stronger error handling, pin optimization features and a more robust execution flow.
+This library is a C++ adaptation of [OTA_update_STM32_using_ESP32](https://github.com/ESP32-Musings/OTA_update_STM32_using_ESP32), enhanced with stronger error handling, pin optimization feature and a more robust execution flow.
 
 ## License
 

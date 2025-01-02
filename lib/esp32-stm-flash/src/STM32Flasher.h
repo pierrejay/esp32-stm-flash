@@ -103,29 +103,13 @@ static constexpr const char* toString(FlashStatus status) {
         }
 }
 
-class STM32Flasher {
-public:
-
-    /**
-     * @brief Constructor with custom configuration
-     * @param config Flasher configuration
-     */
-    explicit STM32Flasher(const FlashConfig& config);
-
-    /**
-     * @brief Flash STM32 with binary file
-     * @param filename Name of the binary file to flash
-     * @return FlashStatus indicating success or specific error
-     */
-    FlashStatus flash(const char* filename);
-
-    // Disable copy constructor and assignment operator
-    STM32Flasher(const STM32Flasher&) = delete;
-    STM32Flasher& operator=(const STM32Flasher&) = delete;
-
-private:
-    FlashConfig config_;         // Configuration
-};
+/**
+ * @brief Flash STM32 with binary file
+ * @param config Flasher configuration
+ * @param filename Name of the binary file to flash
+ * @return FlashStatus indicating success or specific error
+ */
+FlashStatus flash(const FlashConfig& config, const char* filename);
 
 } // namespace stm32flash
 

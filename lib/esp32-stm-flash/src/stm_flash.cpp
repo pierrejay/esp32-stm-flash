@@ -5,7 +5,7 @@ namespace internal {
 
 static const char *TAG_STM_FLASH = "stm_flash";
 
-stm32flash::FlashStatus flashSTM(const char *file_name, gpio_num_t reset_pin, gpio_num_t boot0_pin, gpio_num_t uart_tx, gpio_num_t uart_rx, uart_port_t uart_num)
+FlashStatus flashSTM(const char *file_name, gpio_num_t reset_pin, gpio_num_t boot0_pin, gpio_num_t uart_tx, gpio_num_t uart_rx, uart_port_t uart_num)
 {
     FILE *flash_file = NULL;
 
@@ -100,7 +100,7 @@ stm32flash::FlashStatus flashSTM(const char *file_name, gpio_num_t reset_pin, gp
     return stm32flash::SUCCESS;
 }
 
-stm32flash::FlashStatus writeTask(FILE *flash_file, gpio_num_t reset_pin, uart_port_t uart_num)
+FlashStatus writeTask(FILE *flash_file, gpio_num_t reset_pin, uart_port_t uart_num)
 {
     logI(TAG_STM_FLASH, "%s", "Starting Write Task");
 
@@ -140,7 +140,7 @@ stm32flash::FlashStatus writeTask(FILE *flash_file, gpio_num_t reset_pin, uart_p
     return stm32flash::SUCCESS;
 }
 
-stm32flash::FlashStatus readTask(FILE *flash_file, uart_port_t uart_num)
+FlashStatus readTask(FILE *flash_file, uart_port_t uart_num)
 {
     logI(TAG_STM_FLASH, "%s", "Starting Read & Verification Task");
     char readAddress[4] = {0x08, 0x00, 0x00, 0x00};

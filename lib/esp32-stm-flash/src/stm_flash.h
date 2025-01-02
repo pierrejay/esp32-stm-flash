@@ -16,7 +16,7 @@ namespace internal {
  *   
  * @return ESP_OK - success, ESP_FAIL - failed
  */
-stm32flash::FlashStatus writeTask(FILE *flash_file, gpio_num_t reset_pin, uart_port_t uart_num);
+FlashStatus writeTask(FILE *flash_file, gpio_num_t reset_pin, uart_port_t uart_num);
 
 /**
  * @brief Read the flash memory of the STM32Fxx, for verification
@@ -28,7 +28,7 @@ stm32flash::FlashStatus writeTask(FILE *flash_file, gpio_num_t reset_pin, uart_p
  *   
  * @return ESP_OK - success, ESP_FAIL - failed
  */
-stm32flash::FlashStatus readTask(FILE *flash_file, uart_port_t uart_num);
+FlashStatus readTask(FILE *flash_file, uart_port_t uart_num);
 
 /**
  * @brief Flash the .bin file passed, to STM32Fxx, with read verification
@@ -37,7 +37,7 @@ stm32flash::FlashStatus readTask(FILE *flash_file, uart_port_t uart_num);
  *   
  * @return ESP_OK - success, ESP_FAIL - failed
  */
-stm32flash::FlashStatus flashSTM(
+FlashStatus flashSTM(
     const char* filename,
     gpio_num_t reset_pin,
     gpio_num_t boot0_pin,

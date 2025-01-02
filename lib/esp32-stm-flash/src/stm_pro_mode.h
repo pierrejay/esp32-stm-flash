@@ -37,20 +37,8 @@
 namespace stm32flash {
 namespace internal {
 
-//Macro for error checking
-#define IS_ESP_OK(x) if ((x) != ESP_OK) break;
-
-#define TXD_PIN (GPIO_NUM_43) 
-#define RXD_PIN (GPIO_NUM_6) 
 #define UART_BAUD_RATE 115200
 #define UART_BUF_SIZE 1024
-#define UART_CONTROLLER UART_NUM_1
-
-#define RESET_PIN (GPIO_NUM_5) 
-#define BOOT0_PIN (GPIO_NUM_4) 
-// Already defined in Arduino.h
-// #define HIGH 1
-// #define LOW 0
 
 #define ACK 0x79
 #define SERIAL_TIMEOUT 5000

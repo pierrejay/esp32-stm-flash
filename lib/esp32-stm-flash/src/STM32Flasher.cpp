@@ -4,22 +4,19 @@
 
 namespace stm32flash {
 
-STM32Flasher::STM32Flasher(const FlashConfig& config) : 
-    config_(config) {}
-
-FlashStatus STM32Flasher::flash(const char* filename) {
-    if (!config_.isValid()) {
+FlashStatus flash(const FlashConfig& config, const char* filename) {
+    if (!config.isValid()) {
         return ERROR_CONFIG_INVALID;
     }
 
     // Everything is handled in flashSTM
     return internal::flashSTM(
         filename,
-        config_.reset_pin,
-        config_.boot0_pin,
-        config_.uart_tx,
-        config_.uart_rx,
-        config_.uart_num
+        config.reset_pin,
+        config.boot0_pin,
+        config.uart_tx,
+        config.uart_rx,
+        config.uart_num
     );
 }
 
