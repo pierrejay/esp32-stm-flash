@@ -1,8 +1,6 @@
 #ifndef _STM_PRO_MODE_H
 #define _STM_PRO_MODE_H
 
-#include "STM32Flasher.h"  // Pour avoir accès à FlashStatus
-
 #include "logger.h"
 
 #include <stdio.h>
@@ -33,6 +31,11 @@
 #include "esp_http_server.h"
 
 #include "nvs_flash.h"
+
+#include "STM32Flasher.h"
+
+namespace stm32flash {
+namespace internal {
 
 //Macro for error checking
 #define IS_ESP_OK(x) if ((x) != ESP_OK) break;
@@ -116,4 +119,7 @@ stm32flash::FlashStatus isSTMPresent(gpio_num_t reset_pin, uart_port_t uart_num)
 //Nouvelle fonction pour gérer l'état du STM32
 stm32flash::FlashStatus setFlashMode(gpio_num_t reset_pin, gpio_num_t boot0_pin, uart_port_t uart_num, bool enter_flash_mode);
 
-#endif
+} // namespace internal
+} // namespace stm32flash
+
+#endif  

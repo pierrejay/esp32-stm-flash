@@ -3,6 +3,9 @@
 
 #include "stm_pro_mode.h"
 
+namespace stm32flash {
+namespace internal {
+
 /**
  * @brief Write the code into the flash memory of STM32Fxx
  * 
@@ -42,5 +45,8 @@ stm32flash::FlashStatus flashSTM(
     gpio_num_t uart_rx,
     uart_port_t uart_num
 );
+
+} // namespace internal
+} // namespace stm32flash
 
 #endif

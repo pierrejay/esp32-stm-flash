@@ -8,6 +8,9 @@
 #include <string.h>
 #include "esp_log.h"
 
+namespace stm32flash {
+namespace internal {
+
 #define LOG_BUFFER_SIZE 512
 #define LOG_FILE_PATH "/spiffs/log.txt"
 
@@ -21,5 +24,8 @@
 void logger(esp_log_level_t level, const char *TAG, int line, const char *func, const char *fmt, ...);
 bool setLogToFile(void);
 bool isLoggingToFileEnabled(void);
+
+} // namespace internal
+} // namespace stm32flash   
 
 #endif

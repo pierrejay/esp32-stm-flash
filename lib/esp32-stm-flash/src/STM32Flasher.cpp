@@ -13,7 +13,7 @@ FlashStatus STM32Flasher::flash(const char* filename) {
     }
 
     // Everything is handled in flashSTM
-    return flashSTM(
+    return internal::flashSTM(
         filename,
         config_.reset_pin,
         config_.boot0_pin,

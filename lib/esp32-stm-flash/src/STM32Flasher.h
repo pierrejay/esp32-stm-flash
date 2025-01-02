@@ -1,7 +1,6 @@
 #ifndef STM32_FLASHER_H
 #define STM32_FLASHER_H
 
-#include <Arduino.h>
 #include "driver/uart.h" 
 #include "driver/gpio.h"
 

@@ -1,5 +1,8 @@
 #include "stm_pro_mode.h"
 
+namespace stm32flash {
+namespace internal {
+
 static const char *TAG_STM_PRO = "stm_pro_mode";
 
 //Functions for custom adjustments
@@ -412,3 +415,6 @@ stm32flash::FlashStatus setFlashMode(gpio_num_t reset_pin, gpio_num_t boot0_pin,
     logI(TAG_STM_PRO, "STM32 %s flash mode", enter_flash_mode ? "entered" : "exited");
     return stm32flash::SUCCESS;
 }
+
+} // namespace internal
+} // namespace stm32flash   

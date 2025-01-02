@@ -1,5 +1,8 @@
 #include "logger.h"
 
+namespace stm32flash {
+namespace internal {
+
 static bool logToFile = false;
 const char *logLevel[] = {"E", "W", "I", "D", "V"};
 
@@ -71,3 +74,6 @@ void logger(esp_log_level_t level, const char *TAG, int line, const char *func, 
         break;
     }
 }
+
+} // namespace internal
+} // namespace stm32flash
